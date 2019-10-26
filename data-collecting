@@ -1,0 +1,53 @@
+import requests
+from lxml import etree
+import time
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36',
+    'Cookies ' : 'bid=hAEdbjYcGX8; ct=y; ll="118282"; _vwo_uuid_v2=D0D8C7EB3554A599ADE60518126C26B73|7f8e9f93a3c5dc93ca40f8469266b6f9; trc_cookie_storage=taboola%2520global%253Auser-id%3D254c1dc2-0164-4ae2-b334-50d7a4df43b0-tuct40a025e; __utmc=30149280; __utmc=223695111; push_doumail_num=0; __utmv=30149280.19061; __utma=30149280.1680265346.1561354567.1561536908.1561561470.8; __utmz=30149280.1561561470.8.4.utmcsr=baidu|utmccn=(organic)|utmcmd=organic; gr_user_id=ce529e83-da0d-4eed-8bde-3ceb6f1149b7; __utma=223695111.1763528297.1561354567.1561507388.1561561477.7; __utmz=223695111.1561561477.7.3.utmcsr=book.douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/; __yadk_uid=Nm3MaZQCqCJqB09gmyFUMzscSvCCDWV4; push_noty_num=5; _pk_ref.100001.4cf6=%5B%22%22%2C%22%22%2C1561616921%2C%22https%3A%2F%2Faccounts.douban.com%2Fpassport%2Flogin%3Fsource%3Dmovie%22%5D; _pk_ses.100001.4cf6=*; 
+_pk_id.100001.4cf6=bcae4dc39f34fce0.1561354567.8.1561616923.1561562397.; 
+
+dbcl2="190616662:Ondh04qfPZI"'
+}      #请求头及模拟登录
+
+def get_html(url):    #获得响应并解析
+    r = requests.get(url).text
+    html = etree.HTML(r)
+    return html
+
+def get_info(html):    #获取网页内容
+    # ad = html.xpath('//span[@class="comment-info"]/a/text()')   #评论者用户名
+    comments = html.xpath('//div[@class="comment"]/p/span/text()')   #评论内容
+    weighs = html.xpath('//span[@class="comment-vote"]/span/text()')  #评论的点赞数
+    
+times = html.xpath('//span[@class="comment-info"]/span[@class="comment-time "]/text()')   #评论时间
+    stars = html.xpath('//div[@class = "comment-item"]/div[2]/h3/span[2]/span[2]/@title')   #推荐指数，即几颗星
+
+    imgs = []
+    charts = []
+    for x in range(len(comments)):   
+        comment = comments[x].strip()    #获取内容并去除前后冗余
+        weigh = weighs[x].strip()
+        star = stars[x].strip()
+        time = times[x].strip()
+      
+        img = '支持'+'\t'+ weigh+'\t'+'内容'+'\t'+ comment   #文件排版
+        chart = '评价'+'\t'+ star+'\t'+'时间'+'\t'+ time
+        
+        imgs.append(img)
+        charts.append(chart)
+    return imgs, charts
+
+def get_url(page):   #获取下一页的url
+    url = 'https://movie.douban.com/subject/26752088/comments?start=' + str(20 * page) + '&amp;limit=20&amp;sort=time&amp;status=P'
+    time.sleep(5)    #暂停5秒
+    return url
+for page in range(1, 10):  # 访问下一页
+    imgs, charts = get_info(get_html(get_url(page)))
+    with open('C:\\Users\\HP\\Desktop\\imgs.xls', 'a', encoding='ANSI') as f:   #存储数据
+        for img in imgs:
+            f.write(str(img) + '\n')
+    with open('C:\\Users\\HP\\Desktop\\charts.xls', 'a', encoding='ANSI') as f:
+        for chart in charts:
+            f.write(str(chart) + '\n')
+print("爬虫结束")
